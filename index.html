@@ -325,7 +325,11 @@
         <a href="mailto:omstudios.official@icloud.com"><span class="ic">&#9993;</span><span><b>Email</b><small>omstudios.official@icloud.com</small></span></a>
         <a href="https://instagram.com/oandmstudios" target="_blank" rel="noopener"><span class="ic">&#9673;</span><span><b>Instagram</b><small>@oandmstudios</small></span></a>
       </div>
-      <form id="inquiry" onsubmit="return sendInquiry(event)">
+      <form id="inquiry">
+        <input type="hidden" name="access_key" value="29984062-dfb1-4c17-8202-587dff9b7eea" />
+        <input type="hidden" name="subject" value="New booth inquiry from your website" />
+        <input type="hidden" name="from_name" value="O&amp;M Studios Website" />
+        <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off" />
         <div>
           <label for="name">Your name</label>
           <input id="name" name="name" required placeholder="First &amp; last name" />
@@ -335,18 +339,19 @@
           <div><label for="phone">Phone</label><input id="phone" name="phone" placeholder="(000) 000-0000" /></div>
         </div>
         <div class="row">
-          <div><label for="date">Event date</label><input id="date" name="date" type="date" /></div>
+          <div><label for="date">Event date</label><input id="date" name="event_date" type="date" /></div>
           <div>
             <label for="type">Event type</label>
-            <select id="type" name="type">
+            <select id="type" name="event_type">
               <option>Wedding</option><option>Engagement / Shower</option><option>Graduation</option>
               <option>Birthday</option><option>Corporate / Business</option><option>Other</option>
             </select>
           </div>
         </div>
-        <div><label for="loc">Event location</label><input id="loc" name="loc" placeholder="Venue or city" /></div>
-        <div><label for="msg">Anything else?</label><textarea id="msg" name="msg" placeholder="Guest count, hours, custom backdrop ideas&hellip;"></textarea></div>
+        <div><label for="loc">Event location</label><input id="loc" name="location" placeholder="Venue or city" /></div>
+        <div><label for="msg">Anything else?</label><textarea id="msg" name="message" placeholder="Guest count, hours, custom backdrop ideas&hellip;"></textarea></div>
         <button type="submit" class="btn btn-dark" style="margin-top:4px">Send Inquiry</button>
+        <p id="formnote" style="margin-top:8px;font-size:14px;min-height:20px"></p>
       </form>
     </div>
   </div>
@@ -380,23 +385,40 @@
 
 <script>
   document.getElementById('yr').textContent = new Date().getFullYear();
-  function sendInquiry(e){
-    e.preventDefault();
-    var f = e.target;
-    var v = function(id){ return (f.querySelector('#'+id)||{}).value || '—'; };
-    var body =
-      'New booking inquiry from the O&M Studios site:%0D%0A%0D%0A'+
-      'Name: '+encodeURIComponent(v('name'))+'%0D%0A'+
-      'Email: '+encodeURIComponent(v('email'))+'%0D%0A'+
-      'Phone: '+encodeURIComponent(v('phone'))+'%0D%0A'+
-      'Event date: '+encodeURIComponent(v('date'))+'%0D%0A'+
-      'Event type: '+encodeURIComponent(v('type'))+'%0D%0A'+
-      'Location: '+encodeURIComponent(v('loc'))+'%0D%0A'+
-      'Notes: '+encodeURIComponent(v('msg'))+'%0D%0A';
-    var subject = encodeURIComponent('Booth inquiry — '+v('name')+' — '+v('date'));
-    window.location.href = 'mailto:omstudios.official@icloud.com?subject='+subject+'&body='+body;
-    return false;
-  }
+  (function(){
+    var form = document.getElementById('inquiry');
+    var note = document.getElementById('formnote');
+    if(!form) return;
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var key = (form.querySelector('[name=access_key]')||{}).value || '';
+      if(key.indexOf('PASTE_YOUR') === 0){
+        note.style.color = '#9b2d2d';
+        note.textContent = 'The form is not connected yet \u2014 please call or text us at (708) 981-5752.';
+        return;
+      }
+      note.style.color = '#736b5f';
+      note.textContent = 'Sending\u2026';
+      var data = Object.fromEntries(new FormData(form).entries());
+      fetch('https://api.web3forms.com/submit', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body: JSON.stringify(data)
+      }).then(function(r){return r.json();}).then(function(res){
+        if(res.success){
+          note.style.color = '#2e6b4f';
+          note.textContent = 'Thank you! Your inquiry has been sent \u2014 we\u2019ll be in touch shortly.';
+          form.reset();
+        } else {
+          note.style.color = '#9b2d2d';
+          note.textContent = 'Sorry, something went wrong. Please call or text (708) 981-5752.';
+        }
+      }).catch(function(){
+        note.style.color = '#9b2d2d';
+        note.textContent = 'Network error. Please call or text (708) 981-5752.';
+      });
+    });
+  })();
 </script>
 </body>
 </html>
